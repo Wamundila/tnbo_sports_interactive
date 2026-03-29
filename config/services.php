@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    'interactive' => [
+        'service_key' => env('INTERACTIVE_SERVICE_KEY'),
+    ],
+
+    'authbox' => [
+        'base_url' => env('AUTHBOX_BASE_URL'),
+        'api_key' => env('AUTHBOX_API_KEY'),
+        'current_user_path' => env('AUTHBOX_CURRENT_USER_PATH', '/api/v1/me'),
+        'timeout_seconds' => (int) env('AUTHBOX_TIMEOUT_SECONDS', 5),
+        'profile_cache_ttl_seconds' => (int) env('AUTHBOX_PROFILE_CACHE_TTL_SECONDS', 60),
+    ],
+
 ];
