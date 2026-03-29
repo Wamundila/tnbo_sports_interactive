@@ -3,12 +3,25 @@
 namespace Tests\Feature\Web;
 
 use App\Models\Admin;
+use App\Models\PredictorCampaign;
+use App\Models\PredictorRound;
+use App\Models\PredictorSeason;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Tests\Concerns\GeneratesJwtTokens;
 use Tests\TestCase;
 
 class AdminWebUiTest extends TestCase
 {
+    use GeneratesJwtTokens;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->configureJwtTestEnvironment();
+    }
 
     public function test_admin_login_page_is_available_to_guests(): void
     {
@@ -44,10 +57,11 @@ class AdminWebUiTest extends TestCase
             ->assertOk()
             ->assertSee('Dashboard')
             ->assertSee('Recent quizzes')
-            ->assertSee('How To');
+            ->assertSee('Daily Quiz')
+            ->assertSee('Predictor League');
     }
 
-    public function test_authenticated_admin_can_open_quiz_report_and_help_pages(): void
+    public function test_authenticated_admin_can_open_quiz_report_help_and_predictor_pages(): void
     {
         $admin = Admin::create([
             'name' => 'Trivia Admin',
@@ -73,5 +87,127 @@ class AdminWebUiTest extends TestCase
             ->assertSee('How To Get Trivia Live')
             ->assertSee('scheduled')
             ->assertSee('Publish');
+
+        $this->get('/admin/predictor')
+            ->assertOk()
+            ->assertSee('Predictor Campaigns')
+            ->assertSee('/api/v1/predictor/summary');
+    }
+
+    public function test_admin_can_create_predictor_campaign_season_and_round_that_surfaces_as_available(): void
+    {
+        $admin = Admin::create([
+            'name' => 'Predictor Admin',
+            'email' => 'predictor-admin@example.com',
+            'password' => 'secret-pass',
+            'role' => 'interactive_admin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin, 'admin');
+
+        $this->post('/admin/predictor/campaigns', [
+            'name' => 'Super League Predictor',
+            'slug' => 'super_league_predictor',
+            'display_name' => 'MTN Super League Predictor',
+            'sponsor_name' => 'MTN',
+            'description' => 'Weekly football predictor.',
+            'scope_type' => 'single_competition',
+            'default_fixture_count' => 4,
+            'banker_enabled' => '1',
+            'status' => 'active',
+            'visibility' => 'public',
+            'starts_at' => now()->subDay()->format('Y-m-d\TH:i'),
+            'ends_at' => now()->addMonths(2)->format('Y-m-d\TH:i'),
+        ])->assertRedirect();
+
+        $campaign = PredictorCampaign::query()->where('slug', 'super_league_predictor')->firstOrFail();
+
+        $this->post('/admin/predictor/campaigns/'.$campaign->slug.'/seasons', [
+            'name' => '2026 Season',
+            'slug' => '2026-season',
+            'start_date' => now()->subMonth()->toDateString(),
+            'end_date' => now()->addMonth()->toDateString(),
+            'status' => 'active',
+            'is_current' => '1',
+            'rules_text' => 'Exact scores matter.',
+            'scoring_outcome_points' => 3,
+            'scoring_exact_score_points' => 5,
+            'scoring_close_score_points' => 1.5,
+            'scoring_banker_multiplier' => 2,
+        ])->assertRedirect();
+
+        $season = PredictorSeason::query()->where('campaign_id', $campaign->id)->where('slug', '2026-season')->firstOrFail();
+
+        $this->post('/admin/predictor/seasons/'.$season->id.'/rounds', [
+            'name' => 'Round 8',
+            'round_number' => 8,
+            'opens_at' => now()->subHours(2)->format('Y-m-d\TH:i'),
+            'prediction_closes_at' => now()->addHours(6)->format('Y-m-d\TH:i'),
+            'round_closes_at' => now()->addDay()->format('Y-m-d\TH:i'),
+            'status' => 'open',
+            'fixtures' => [
+                [
+                    'display_order' => 1,
+                    'competition_name_snapshot' => 'MTN Super League',
+                    'home_team_name_snapshot' => 'Power Dynamos',
+                    'away_team_name_snapshot' => 'Zesco United',
+                    'kickoff_at' => now()->addHours(1)->format('Y-m-d\TH:i'),
+                    'result_status' => 'pending',
+                ],
+                [
+                    'display_order' => 2,
+                    'competition_name_snapshot' => 'MTN Super League',
+                    'home_team_name_snapshot' => 'Nkana',
+                    'away_team_name_snapshot' => 'Kabwe Warriors',
+                    'kickoff_at' => now()->addHours(2)->format('Y-m-d\TH:i'),
+                    'result_status' => 'pending',
+                ],
+                [
+                    'display_order' => 3,
+                    'competition_name_snapshot' => 'MTN Super League',
+                    'home_team_name_snapshot' => 'Forest Rangers',
+                    'away_team_name_snapshot' => 'Green Eagles',
+                    'kickoff_at' => now()->addHours(3)->format('Y-m-d\TH:i'),
+                    'result_status' => 'pending',
+                ],
+                [
+                    'display_order' => 4,
+                    'competition_name_snapshot' => 'MTN Super League',
+                    'home_team_name_snapshot' => 'Nchanga Rangers',
+                    'away_team_name_snapshot' => 'Red Arrows',
+                    'kickoff_at' => now()->addHours(4)->format('Y-m-d\TH:i'),
+                    'result_status' => 'pending',
+                ],
+            ],
+        ])->assertRedirect();
+
+        $round = PredictorRound::query()->where('season_id', $season->id)->where('name', 'Round 8')->firstOrFail();
+
+        $this->assertSame('open', $round->status);
+        $this->assertSame(4, $round->fixture_count);
+        $this->assertTrue($season->fresh()->is_current);
+
+        $this->fakeAuthBoxProfile();
+
+        $this->withHeaders($this->authHeaders())
+            ->getJson('/api/v1/predictor/summary?campaign_slug='.$campaign->slug)
+            ->assertOk()
+            ->assertJsonPath('campaign.slug', $campaign->slug)
+            ->assertJsonPath('predictor_surface.state', 'available')
+            ->assertJsonPath('predictor_surface.current_round.id', $round->id);
+    }
+
+    private function fakeAuthBoxProfile(): void
+    {
+        Http::fake([
+            'https://authbox.test/api/v1/me' => Http::response([
+                'user_id' => 'ts_123',
+                'display_name' => 'Predictor User',
+                'avatar_url' => null,
+                'email_verified_at' => now()->toIso8601String(),
+                'verified' => true,
+            ]),
+        ]);
     }
 }

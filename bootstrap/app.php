@@ -3,6 +3,7 @@
 use App\Exceptions\ApiException;
 use App\Http\Middleware\EnsureAdminApiToken;
 use App\Http\Middleware\EnsureInternalServiceRequest;
+use App\Http\Middleware\EnsureVerifiedPredictorUser;
 use App\Http\Middleware\EnsureVerifiedTriviaUser;
 use App\Http\Middleware\LogProtectedApiRequest;
 use App\Http\Middleware\VerifyJwtToken;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.auth' => EnsureAdminApiToken::class,
             'service.auth' => EnsureInternalServiceRequest::class,
             'verified.account' => EnsureVerifiedTriviaUser::class,
+            'verified.predictor' => EnsureVerifiedPredictorUser::class,
             'protected.api.logging' => LogProtectedApiRequest::class,
         ]);
     })

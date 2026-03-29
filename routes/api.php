@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\TriviaQuizAdminController;
 use App\Http\Controllers\Api\Admin\TriviaReportAdminController;
+use App\Http\Controllers\Api\Predictor\PredictorCampaignController;
+use App\Http\Controllers\Api\Predictor\PredictorEntryController;
+use App\Http\Controllers\Api\Predictor\PredictorProfileController;
 use App\Http\Controllers\Api\Trivia\TodayTriviaController;
 use App\Http\Controllers\Api\Trivia\TriviaAttemptController;
 use App\Http\Controllers\Api\Trivia\TriviaProfileController;
@@ -45,5 +48,20 @@ Route::prefix('v1')
             Route::get('/me/summary', [TriviaProfileController::class, 'summary']);
             Route::get('/me/history', [TriviaProfileController::class, 'history']);
             Route::get('/leaderboards', [TriviaProfileController::class, 'leaderboard']);
+        });
+
+        Route::prefix('predictor')->group(function (): void {
+            Route::get('/campaigns', [PredictorCampaignController::class, 'index']);
+            Route::get('/summary', [PredictorCampaignController::class, 'summary']);
+            Route::get('/campaigns/{campaign}', [PredictorCampaignController::class, 'show']);
+            Route::get('/campaigns/{campaign}/current-round', [PredictorCampaignController::class, 'currentRound']);
+            Route::get('/campaigns/{campaign}/leaderboards/{boardType}', [PredictorCampaignController::class, 'leaderboard']);
+            Route::get('/rounds/{round}/my-entry', [PredictorEntryController::class, 'myEntry']);
+            Route::post('/rounds/{round}/draft', [PredictorEntryController::class, 'draft'])
+                ->middleware('verified.predictor');
+            Route::post('/rounds/{round}/submit', [PredictorEntryController::class, 'submit'])
+                ->middleware('verified.predictor');
+            Route::get('/me/performance', [PredictorProfileController::class, 'performance']);
+            Route::get('/me/history', [PredictorProfileController::class, 'history']);
         });
     });

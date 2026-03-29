@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Web\Admin\AuthController;
 use App\Http\Controllers\Web\Admin\DashboardController;
+use App\Http\Controllers\Web\Admin\PredictorCampaignController;
+use App\Http\Controllers\Web\Admin\PredictorRoundController;
+use App\Http\Controllers\Web\Admin\PredictorSeasonController;
 use App\Http\Controllers\Web\Admin\QuizController;
 use App\Http\Controllers\Web\Admin\ReportController;
 use Illuminate\Support\Facades\Route;
@@ -31,5 +34,26 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/reports', ReportController::class)->name('reports.index');
         Route::view('/help/how-to', 'admin.help.how-to')->name('help.howto');
+
+        Route::prefix('predictor')->name('predictor.')->group(function (): void {
+            Route::get('/', [PredictorCampaignController::class, 'index'])->name('index');
+            Route::get('/campaigns/create', [PredictorCampaignController::class, 'create'])->name('campaigns.create');
+            Route::post('/campaigns', [PredictorCampaignController::class, 'store'])->name('campaigns.store');
+            Route::get('/campaigns/{campaign}/edit', [PredictorCampaignController::class, 'edit'])->name('campaigns.edit');
+            Route::put('/campaigns/{campaign}', [PredictorCampaignController::class, 'update'])->name('campaigns.update');
+
+            Route::get('/campaigns/{campaign}/seasons/create', [PredictorSeasonController::class, 'create'])->name('campaigns.seasons.create');
+            Route::post('/campaigns/{campaign}/seasons', [PredictorSeasonController::class, 'store'])->name('campaigns.seasons.store');
+            Route::get('/seasons/{season}/edit', [PredictorSeasonController::class, 'edit'])->name('seasons.edit');
+            Route::put('/seasons/{season}', [PredictorSeasonController::class, 'update'])->name('seasons.update');
+
+            Route::get('/seasons/{season}/rounds/create', [PredictorRoundController::class, 'create'])->name('seasons.rounds.create');
+            Route::post('/seasons/{season}/rounds', [PredictorRoundController::class, 'store'])->name('seasons.rounds.store');
+            Route::get('/rounds/{round}/edit', [PredictorRoundController::class, 'edit'])->name('rounds.edit');
+            Route::put('/rounds/{round}', [PredictorRoundController::class, 'update'])->name('rounds.update');
+            Route::post('/rounds/{round}/transition', [PredictorRoundController::class, 'transition'])->name('rounds.transition');
+            Route::post('/rounds/{round}/score', [PredictorRoundController::class, 'score'])->name('rounds.score');
+            Route::post('/rounds/{round}/recalculate', [PredictorRoundController::class, 'recalculate'])->name('rounds.recalculate');
+        });
     });
 });
