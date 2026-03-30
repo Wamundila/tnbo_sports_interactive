@@ -12,7 +12,8 @@ use App\Services\PredictorCampaignResolver;
 use App\Services\PredictorLeaderboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PredictorCampaignController extends Controller
 {
@@ -120,57 +121,64 @@ class PredictorCampaignController extends Controller
         ]);
 
         $campaign = $this->resolver->resolveCampaign($validated['campaign_slug'] ?? null);
-        $season = $this->resolver->currentSeason($campaign);
-        $round = $this->resolver->currentRound($campaign);
-        $entry = $round
-            ? PredictorRoundEntry::query()->where('round_id', $round->id)->where('user_id', $user->userId())->first()
-            : null;
-        $verified = $this->verifiedState($request, $user->token(), $user->userId());
-        $state = $this->resolver->surfaceState($round, $entry, $verified);
-        $userSummary = $this->userSummary($campaign, $season, $user->userId());
 
-        return response()->json([
-            'campaign' => [
-                'id' => $campaign->id,
-                'slug' => $campaign->slug,
-                'display_name' => $campaign->display_name,
-                'status' => $campaign->status,
-            ],
-            'predictor_surface' => [
-                'title' => $round ? 'Predict '.$round->name : $campaign->display_name,
-                'short_description' => $round
-                    ? sprintf('%d fixtures - closes %s', $round->fixtures->count(), $round->prediction_closes_at->diffForHumans())
-                    : 'No active round is available right now.',
-                'state' => $state,
-                'auth_state' => $verified ? 'verified' : 'unverified',
-                'available' => $round ? $this->resolver->isRoundOpen($round) : false,
-                'requires_verified_account' => true,
-                'opens_at' => $round?->opens_at?->toIso8601String(),
-                'prediction_closes_at' => $round?->prediction_closes_at?->toIso8601String(),
-                'round_closes_at' => $round?->round_closes_at?->toIso8601String(),
-                'current_round' => $round ? [
-                    'id' => $round->id,
-                    'name' => $round->name,
-                ] : null,
-                'entry_summary' => $entry ? [
-                    'entry_id' => $entry->id,
-                    'entry_status' => $entry->entry_status,
-                    'saved_at' => $entry->last_edited_at?->toIso8601String(),
-                    'submitted_at' => $entry->submitted_at?->toIso8601String(),
-                    'predictions_count' => $entry->predictions()->count(),
-                    'completed_predictions_count' => $entry->predictions()->count(),
-                    'banker_fixture_id' => $entry->banker_fixture_id,
-                ] : null,
-                'cta' => $this->ctaPayload($state, $campaign, $round),
-            ],
-            'user_summary' => $userSummary,
-            'leaderboard_previews' => $this->leaderboards->previewPayload(
-                campaign: $campaign,
-                season: $season,
-                round: $round,
-                limit: (int) config('predictor.leaderboard_preview_limit', 5),
-            ),
-        ]);
+        try {
+            $season = $this->resolver->currentSeason($campaign);
+            $round = $this->resolver->currentRound($campaign);
+            $entry = $round
+                ? PredictorRoundEntry::query()->where('round_id', $round->id)->where('user_id', $user->userId())->first()
+                : null;
+            $verified = $this->verifiedState($request, $user->token(), $user->userId());
+            $state = $this->resolver->surfaceState($round, $entry, $verified);
+            $userSummary = $this->userSummary($campaign, $season, $user->userId());
+
+            return response()->json([
+                'campaign' => $this->campaignPayload($campaign),
+                'predictor_surface' => [
+                    'title' => $round ? 'Predict '.$round->name : $campaign->display_name,
+                    'short_description' => $round
+                        ? sprintf('%d fixtures - closes %s', $round->fixtures->count(), $round->prediction_closes_at->diffForHumans())
+                        : 'No active round is available right now.',
+                    'state' => $state,
+                    'auth_state' => $verified ? 'verified' : 'unverified',
+                    'available' => $round ? $this->resolver->isRoundOpen($round) : false,
+                    'requires_verified_account' => true,
+                    'opens_at' => $round?->opens_at?->toIso8601String(),
+                    'prediction_closes_at' => $round?->prediction_closes_at?->toIso8601String(),
+                    'round_closes_at' => $round?->round_closes_at?->toIso8601String(),
+                    'current_round' => $round ? [
+                        'id' => $round->id,
+                        'name' => $round->name,
+                    ] : null,
+                    'entry_summary' => $entry ? [
+                        'entry_id' => $entry->id,
+                        'entry_status' => $entry->entry_status,
+                        'saved_at' => $entry->last_edited_at?->toIso8601String(),
+                        'submitted_at' => $entry->submitted_at?->toIso8601String(),
+                        'predictions_count' => $entry->predictions()->count(),
+                        'completed_predictions_count' => $entry->predictions()->count(),
+                        'banker_fixture_id' => $entry->banker_fixture_id,
+                    ] : null,
+                    'cta' => $this->ctaPayload($state),
+                ],
+                'user_summary' => $userSummary,
+                'leaderboard_previews' => $this->leaderboards->previewPayload(
+                    campaign: $campaign,
+                    season: $season,
+                    round: $round,
+                    limit: (int) config('predictor.leaderboard_preview_limit', 5),
+                ),
+            ]);
+        } catch (Throwable $exception) {
+            Log::warning('Predictor summary fallback returned unavailable state.', [
+                'campaign_id' => $campaign->id,
+                'campaign_slug' => $campaign->slug,
+                'user_id' => $user->userId(),
+                'exception' => $exception,
+            ]);
+
+            return response()->json($this->unavailableSummary($campaign));
+        }
     }
 
     public function leaderboard(Request $request, PredictorCampaign $campaign, string $boardType): JsonResponse
@@ -227,7 +235,49 @@ class PredictorCampaignController extends Controller
         ];
     }
 
-    private function ctaPayload(string $state, PredictorCampaign $campaign, $round): array
+    private function campaignPayload(PredictorCampaign $campaign): array
+    {
+        return [
+            'id' => $campaign->id,
+            'slug' => $campaign->slug,
+            'display_name' => $campaign->display_name,
+            'status' => $campaign->status,
+        ];
+    }
+
+    private function unavailableSummary(PredictorCampaign $campaign): array
+    {
+        return [
+            'campaign' => $this->campaignPayload($campaign),
+            'predictor_surface' => [
+                'title' => $campaign->display_name,
+                'short_description' => 'Predictor is temporarily unavailable. Please try again shortly.',
+                'state' => 'unavailable',
+                'auth_state' => 'unknown',
+                'available' => false,
+                'requires_verified_account' => true,
+                'opens_at' => null,
+                'prediction_closes_at' => null,
+                'round_closes_at' => null,
+                'current_round' => null,
+                'entry_summary' => null,
+                'cta' => [
+                    'label' => 'Unavailable',
+                    'action' => 'none',
+                    'destination' => null,
+                    'disabled' => true,
+                ],
+            ],
+            'user_summary' => null,
+            'leaderboard_previews' => [
+                'round' => ['entries' => []],
+                'monthly' => ['entries' => []],
+                'season' => ['entries' => []],
+            ],
+        ];
+    }
+
+    private function ctaPayload(string $state): array
     {
         return match ($state) {
             'verification_required' => ['label' => 'Verify Account', 'action' => 'verify_account', 'destination' => 'account_verification', 'disabled' => false],
@@ -236,7 +286,7 @@ class PredictorCampaignController extends Controller
             'available' => ['label' => 'Make Picks', 'action' => 'open_predictor_dashboard', 'destination' => 'predictor_dashboard', 'disabled' => false],
             'not_open' => ['label' => 'Opens Soon', 'action' => 'open_predictor_dashboard', 'destination' => 'predictor_dashboard', 'disabled' => false],
             'closed', 'completed' => ['label' => 'View Results', 'action' => 'open_predictor_dashboard', 'destination' => 'predictor_dashboard', 'disabled' => false],
-            default => ['label' => 'Predictor Unavailable', 'action' => 'none', 'destination' => 'predictor_dashboard', 'disabled' => true],
+            default => ['label' => 'Predictor Unavailable', 'action' => 'none', 'destination' => null, 'disabled' => true],
         };
     }
 }

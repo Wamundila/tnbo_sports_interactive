@@ -95,6 +95,14 @@ class PredictorEntryService
                 'is_banker' => $prediction->is_banker,
                 'points_awarded' => (float) $prediction->points_awarded,
                 'scoring_status' => $prediction->scoring_status,
+                'actual_home_score' => $prediction->scoring_status === 'scored' ? $prediction->fixture->actual_home_score : null,
+                'actual_away_score' => $prediction->scoring_status === 'scored' ? $prediction->fixture->actual_away_score : null,
+                'points_breakdown' => [
+                    'outcome_points' => (float) $prediction->outcome_points,
+                    'exact_score_points' => (float) $prediction->exact_score_points,
+                    'close_score_points' => (float) $prediction->close_score_points,
+                    'banker_bonus_points' => (float) $prediction->banker_bonus_points,
+                ],
                 'fixture' => [
                     'home_team_name' => $prediction->fixture->home_team_name_snapshot,
                     'away_team_name' => $prediction->fixture->away_team_name_snapshot,

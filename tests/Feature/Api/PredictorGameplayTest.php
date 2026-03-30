@@ -4,12 +4,16 @@ namespace Tests\Feature\Api;
 
 use App\Models\PredictorCampaign;
 use App\Models\PredictorLeaderboardEntry;
+use App\Models\PredictorPrediction;
 use App\Models\PredictorRound;
 use App\Models\PredictorRoundEntry;
 use App\Models\PredictorRoundFixture;
 use App\Models\PredictorSeason;
+use App\Services\PredictorCampaignResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Mockery;
+use RuntimeException;
 use Tests\Concerns\GeneratesJwtTokens;
 use Tests\TestCase;
 
@@ -62,6 +66,28 @@ class PredictorGameplayTest extends TestCase
             ->assertJsonPath('predictor_surface.current_round.id', $round->id)
             ->assertJsonPath('predictor_surface.auth_state', 'verified')
             ->assertJsonPath('user_summary.current_rank', 12)
+            ->assertJsonPath('leaderboard_previews.round.entries', []);
+    }
+
+    public function test_predictor_summary_can_fall_back_to_unavailable_state_when_resolution_fails(): void
+    {
+        [$campaign] = $this->createOpenCampaign();
+
+        $resolver = Mockery::mock(PredictorCampaignResolver::class);
+        $resolver->shouldReceive('resolveCampaign')->once()->with($campaign->slug)->andReturn($campaign);
+        $resolver->shouldReceive('currentSeason')->once()->with($campaign)->andThrow(new RuntimeException('round resolution failed'));
+        $this->app->instance(PredictorCampaignResolver::class, $resolver);
+
+        $this->withHeaders($this->authHeaders())
+            ->getJson('/api/v1/predictor/summary?campaign_slug='.$campaign->slug)
+            ->assertOk()
+            ->assertJsonPath('campaign.slug', $campaign->slug)
+            ->assertJsonPath('predictor_surface.state', 'unavailable')
+            ->assertJsonPath('predictor_surface.auth_state', 'unknown')
+            ->assertJsonPath('predictor_surface.available', false)
+            ->assertJsonPath('predictor_surface.cta.disabled', true)
+            ->assertJsonPath('predictor_surface.cta.destination', null)
+            ->assertJsonPath('user_summary', null)
             ->assertJsonPath('leaderboard_previews.round.entries', []);
     }
 
@@ -127,6 +153,26 @@ class PredictorGameplayTest extends TestCase
             'close_score_count' => 1,
         ]);
 
+        $scoredPrediction = PredictorPrediction::query()
+            ->where('round_entry_id', $entry->id)
+            ->where('round_fixture_id', $round->fixtures[0]->id)
+            ->firstOrFail();
+
+        $scoredPrediction->update([
+            'points_awarded' => 8,
+            'outcome_points' => 3,
+            'exact_score_points' => 5,
+            'close_score_points' => 0,
+            'banker_bonus_points' => 0,
+            'scoring_status' => 'scored',
+        ]);
+
+        $round->fixtures[0]->update([
+            'result_status' => 'completed',
+            'actual_home_score' => 1,
+            'actual_away_score' => 0,
+        ]);
+
         PredictorLeaderboardEntry::create([
             'leaderboard_type' => 'season',
             'campaign_id' => $campaign->id,
@@ -151,7 +197,15 @@ class PredictorGameplayTest extends TestCase
             ->assertJsonPath('entry.entry_status', 'submitted')
             ->assertJsonPath('entry.banker_fixture_id', $round->fixtures[0]->id)
             ->assertJsonPath('entry.predictions.0.predicted_outcome', 'home_win')
-            ->assertJsonPath('entry.predictions.0.is_banker', true);
+            ->assertJsonPath('entry.predictions.0.is_banker', true)
+            ->assertJsonPath('entry.predictions.0.actual_home_score', 1)
+            ->assertJsonPath('entry.predictions.0.actual_away_score', 0)
+            ->assertJsonPath('entry.predictions.0.points_breakdown.outcome_points', 3)
+            ->assertJsonPath('entry.predictions.0.points_breakdown.exact_score_points', 5)
+            ->assertJsonPath('entry.predictions.0.points_breakdown.close_score_points', 0)
+            ->assertJsonPath('entry.predictions.0.points_breakdown.banker_bonus_points', 0)
+            ->assertJsonPath('entry.predictions.1.actual_home_score', null)
+            ->assertJsonPath('entry.predictions.1.actual_away_score', null);
 
         $this->withHeaders($this->authHeaders())
             ->getJson('/api/v1/predictor/me/performance?campaign_slug='.$campaign->slug)
@@ -254,3 +308,5 @@ class PredictorGameplayTest extends TestCase
         ];
     }
 }
+
+

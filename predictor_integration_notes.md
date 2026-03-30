@@ -543,3 +543,67 @@ So the current implementation now supports campaign creation, round publishing/o
 - `app/Services/PredictorLeaderboardService.php`
 - `app/Services/AdminPredictorManagementService.php`
 
+
+## Predictor Summary Fallback
+
+Additive fallback state:
+- `unavailable`
+
+Use `predictor_surface.state = unavailable` when the campaign can be resolved but normal summary resolution fails unexpectedly and Interactive still wants to return a safe summary payload instead of a broken or guessed business state.
+
+Fallback expectations:
+- `auth_state` becomes `unknown`
+- `available` is `false`
+- `current_round` is `null`
+- `entry_summary` is `null`
+- `user_summary` is `null`
+- `leaderboard_previews.round.entries` is empty
+- `leaderboard_previews.monthly.entries` is empty
+- `leaderboard_previews.season.entries` is empty
+- CTA is disabled with `action=none`
+
+This fallback is for service-side degradation, not normal business timing states like `not_open`, `closed`, `completed`, or `no_round`.
+## Predictor My-Entry Scored Rows
+
+`GET /api/v1/predictor/rounds/{round}/my-entry` now returns scored-result fields on each prediction row.
+
+Additive fields on `entry.predictions[]`:
+- `actual_home_score`
+- `actual_away_score`
+- `points_breakdown.outcome_points`
+- `points_breakdown.exact_score_points`
+- `points_breakdown.close_score_points`
+- `points_breakdown.banker_bonus_points`
+
+Behavior:
+- before a prediction is scored, `actual_home_score` and `actual_away_score` are `null`
+- after a prediction is scored, those actual result fields are populated from the finalized fixture result
+- `points_breakdown` is always present and reflects the stored scoring columns for that prediction row
+
+Example scored row:
+
+```json
+{
+  "prediction_id": 1,
+  "round_fixture_id": 3001,
+  "predicted_home_score": 1,
+  "predicted_away_score": 0,
+  "predicted_outcome": "home_win",
+  "is_banker": true,
+  "points_awarded": 8,
+  "scoring_status": "scored",
+  "actual_home_score": 1,
+  "actual_away_score": 0,
+  "points_breakdown": {
+    "outcome_points": 3,
+    "exact_score_points": 5,
+    "close_score_points": 0,
+    "banker_bonus_points": 0
+  },
+  "fixture": {
+    "home_team_name": "Power Dynamos",
+    "away_team_name": "Zesco United",
+    "kickoff_at": "2026-03-29T13:00:00+02:00"
+  }
+}
+```
