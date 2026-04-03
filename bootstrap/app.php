@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureVerifiedPredictorUser;
 use App\Http\Middleware\EnsureVerifiedTriviaUser;
 use App\Http\Middleware\LogProtectedApiRequest;
 use App\Http\Middleware\VerifyJwtToken;
+use App\Http\Middleware\VerifyOptionalJwtToken;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'jwt.auth' => VerifyJwtToken::class,
+            'jwt.optional' => VerifyOptionalJwtToken::class,
             'admin.auth' => EnsureAdminApiToken::class,
             'service.auth' => EnsureInternalServiceRequest::class,
             'verified.account' => EnsureVerifiedTriviaUser::class,

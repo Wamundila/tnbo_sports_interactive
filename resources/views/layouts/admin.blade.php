@@ -12,7 +12,7 @@
                 <aside class="sidebar">
                     <div class="sidebar-brand">
                         <a class="brand" href="{{ route('admin.dashboard') }}">TNBO Interactive Admin</a>
-                        <div class="subtitle">Local staff console for trivia and predictor operations</div>
+                        <div class="subtitle">Local staff console for trivia, predictor, and poll operations</div>
                     </div>
 
                     <nav class="sidebar-nav">
@@ -32,6 +32,14 @@
                             <div class="sidebar-group-links">
                                 <a href="{{ route('admin.predictor.index') }}" class="sidebar-link {{ request()->routeIs('admin.predictor.index') ? 'active' : '' }}">Campaigns</a>
                                 <a href="{{ route('admin.predictor.campaigns.create') }}" class="sidebar-link {{ request()->routeIs('admin.predictor.campaigns.create') ? 'active' : '' }}">New Campaign</a>
+                            </div>
+                        </details>
+
+                        <details class="sidebar-group" @if (request()->routeIs('admin.polls.*')) open @endif>
+                            <summary>Single Choice Poll</summary>
+                            <div class="sidebar-group-links">
+                                <a href="{{ route('admin.polls.index') }}" class="sidebar-link {{ request()->routeIs('admin.polls.index') ? 'active' : '' }}">Polls</a>
+                                <a href="{{ route('admin.polls.create') }}" class="sidebar-link {{ request()->routeIs('admin.polls.create') ? 'active' : '' }}">New Poll</a>
                             </div>
                         </details>
                     </nav>

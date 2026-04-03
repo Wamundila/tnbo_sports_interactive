@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\Admin\AuthController;
 use App\Http\Controllers\Web\Admin\DashboardController;
+use App\Http\Controllers\Web\Admin\PollController;
 use App\Http\Controllers\Web\Admin\PredictorCampaignController;
 use App\Http\Controllers\Web\Admin\PredictorRoundController;
 use App\Http\Controllers\Web\Admin\PredictorSeasonController;
@@ -34,6 +35,16 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/reports', ReportController::class)->name('reports.index');
         Route::view('/help/how-to', 'admin.help.how-to')->name('help.howto');
+
+        Route::prefix('polls')->name('polls.')->group(function (): void {
+            Route::get('/', [PollController::class, 'index'])->name('index');
+            Route::get('/create', [PollController::class, 'create'])->name('create');
+            Route::post('/', [PollController::class, 'store'])->name('store');
+            Route::get('/{poll}/edit', [PollController::class, 'edit'])->name('edit');
+            Route::put('/{poll}', [PollController::class, 'update'])->name('update');
+            Route::post('/{poll}/publish', [PollController::class, 'publish'])->name('publish');
+            Route::post('/{poll}/close', [PollController::class, 'close'])->name('close');
+        });
 
         Route::prefix('predictor')->name('predictor.')->group(function (): void {
             Route::get('/', [PredictorCampaignController::class, 'index'])->name('index');

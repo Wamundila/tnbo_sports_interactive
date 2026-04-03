@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\TriviaQuizAdminController;
 use App\Http\Controllers\Api\Admin\TriviaReportAdminController;
+use App\Http\Controllers\Api\Poll\PollController;
+use App\Http\Controllers\Api\Poll\PollVoteController;
 use App\Http\Controllers\Api\Predictor\PredictorCampaignController;
 use App\Http\Controllers\Api\Predictor\PredictorEntryController;
 use App\Http\Controllers\Api\Predictor\PredictorProfileController;
@@ -34,6 +36,20 @@ Route::prefix('admin')->group(function (): void {
         });
     });
 });
+
+Route::prefix('v1')
+    ->middleware(['service.auth', 'protected.api.logging'])
+    ->group(function (): void {
+        Route::prefix('polls')->middleware('jwt.optional')->group(function (): void {
+            Route::get('/summary', [PollController::class, 'summary']);
+            Route::get('/{poll}', [PollController::class, 'show']);
+            Route::get('/{poll}/results', [PollController::class, 'results']);
+        });
+
+        Route::prefix('polls')->middleware('jwt.auth')->group(function (): void {
+            Route::post('/{poll}/vote', [PollVoteController::class, 'store']);
+        });
+    });
 
 Route::prefix('v1')
     ->middleware(['service.auth', 'jwt.auth', 'protected.api.logging'])
