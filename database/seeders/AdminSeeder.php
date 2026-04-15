@@ -10,10 +10,10 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         Admin::updateOrCreate(
-            ['email' => env('ADMIN_SEED_EMAIL', 'admin@interactive.local')],
+            ['email' => env('ADMIN_SEED_EMAIL', 'chilandosongwe@gmail.com')],
             [
-                'name' => env('ADMIN_SEED_NAME', 'TNBO Admin'),
-                'password' => env('ADMIN_SEED_PASSWORD', 'password123'),
+                'name' => env('ADMIN_SEED_NAME', 'Wamundila'),
+                'password' => env('ADMIN_SEED_PASSWORD', 'Xpat360!'),
                 'role' => env('ADMIN_SEED_ROLE', 'interactive_admin'),
                 'status' => 'active',
             ]
