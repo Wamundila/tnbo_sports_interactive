@@ -6,8 +6,11 @@ use App\Models\Admin;
 use App\Models\PredictorCampaign;
 use App\Models\PredictorRound;
 use App\Models\PredictorSeason;
+use App\Models\TriviaQuiz;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use Tests\Concerns\GeneratesJwtTokens;
 use Tests\TestCase;
 
@@ -205,6 +208,52 @@ class AdminWebUiTest extends TestCase
             ->assertJsonPath('predictor_surface.current_round.id', $round->id);
     }
 
+    public function test_admin_banner_uploads_are_stored_on_public_storage_disk(): void
+    {
+        Storage::fake('public');
+
+        $admin = Admin::create([
+            'name' => 'Media Admin',
+            'email' => 'media-admin@example.com',
+            'password' => 'secret-pass',
+            'role' => 'interactive_admin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin, 'admin');
+
+        $this->post('/admin/quizzes', [
+            'quiz_date' => now()->addDay()->toDateString(),
+            'title' => 'Banner Quiz',
+            'short_description' => 'Quiz with a storage-backed banner.',
+            'status' => 'draft',
+            'trivia_banner_upload' => $this->fakePngUpload('trivia-banner.png'),
+        ])->assertRedirect();
+
+        $quiz = TriviaQuiz::query()->where('title', 'Banner Quiz')->firstOrFail();
+
+        $this->assertStringStartsWith('/storage/uploads/trivia/banners/', $quiz->trivia_banner_url);
+        Storage::disk('public')->assertExists(str_replace('/storage/', '', $quiz->trivia_banner_url));
+
+        $this->post('/admin/predictor/campaigns', [
+            'name' => 'Storage Predictor',
+            'slug' => 'storage_predictor',
+            'display_name' => 'Storage Predictor',
+            'description' => 'Predictor with a storage-backed banner.',
+            'scope_type' => 'single_competition',
+            'default_fixture_count' => 4,
+            'banker_enabled' => '1',
+            'status' => 'draft',
+            'visibility' => 'public',
+            'banner_image_upload' => $this->fakePngUpload('predictor-banner.png'),
+        ])->assertRedirect();
+
+        $campaign = PredictorCampaign::query()->where('slug', 'storage_predictor')->firstOrFail();
+
+        $this->assertStringStartsWith('/storage/uploads/predictor/campaign-banners/', $campaign->banner_image_url);
+        Storage::disk('public')->assertExists(str_replace('/storage/', '', $campaign->banner_image_url));
+    }
+
     private function fakeAuthBoxProfile(): void
     {
         Http::fake([
@@ -216,5 +265,12 @@ class AdminWebUiTest extends TestCase
                 'verified' => true,
             ]),
         ]);
+    }
+
+    private function fakePngUpload(string $name): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent($name, base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+        ));
     }
 }

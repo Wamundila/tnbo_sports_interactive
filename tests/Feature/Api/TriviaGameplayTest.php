@@ -53,7 +53,7 @@ class TriviaGameplayTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('status', 'in_progress')
             ->assertJsonPath('quiz.id', $quiz->id)
-            ->assertJsonPath('quiz.trivia_banner_url', '/uploads/trivia/banners/daily-test.jpg')
+            ->assertJsonPath('quiz.trivia_banner_url', '/storage/uploads/trivia/banners/daily-test.jpg')
             ->assertJsonPath('questions.0.position', 1);
 
         $this->assertDatabaseHas('trivia_attempts', [
@@ -81,7 +81,7 @@ class TriviaGameplayTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('available', true)
             ->assertJsonPath('state', 'in_progress')
-            ->assertJsonPath('quiz.trivia_banner_url', '/uploads/trivia/banners/daily-test.jpg')
+            ->assertJsonPath('quiz.trivia_banner_url', '/storage/uploads/trivia/banners/daily-test.jpg')
             ->assertJsonPath('current_attempt.attempt_id', $attempt->id);
     }
 
@@ -118,7 +118,7 @@ class TriviaGameplayTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('date', now()->toDateString())
             ->assertJsonPath('daily_trivia.state', 'in_progress')
-            ->assertJsonPath('daily_trivia.trivia_banner_url', '/uploads/trivia/banners/daily-test.jpg')
+            ->assertJsonPath('daily_trivia.trivia_banner_url', '/storage/uploads/trivia/banners/daily-test.jpg')
             ->assertJsonPath('daily_trivia.available', true)
             ->assertJsonPath('daily_trivia.current_attempt.attempt_id', $attempt->id)
             ->assertJsonPath('daily_trivia.today_score_total', null)
@@ -226,7 +226,7 @@ class TriviaGameplayTest extends TestCase
             ->assertJsonPath('date', now()->toDateString())
             ->assertJsonPath('daily_trivia.title', "Today's TNBO Sports Trivia")
             ->assertJsonPath('daily_trivia.short_description', $quiz->short_description)
-            ->assertJsonPath('daily_trivia.trivia_banner_url', '/uploads/trivia/banners/daily-test.jpg')
+            ->assertJsonPath('daily_trivia.trivia_banner_url', '/storage/uploads/trivia/banners/daily-test.jpg')
             ->assertJsonPath('daily_trivia.state', 'already_played')
             ->assertJsonPath('daily_trivia.available', true)
             ->assertJsonPath('daily_trivia.current_attempt', null)
@@ -328,7 +328,7 @@ class TriviaGameplayTest extends TestCase
             'quiz_date' => now()->toDateString(),
             'title' => "Today's TNBO Sports Trivia",
             'short_description' => '3 questions - 90 seconds total potential - 9 base points',
-            'trivia_banner_url' => '/uploads/trivia/banners/daily-test.jpg',
+            'trivia_banner_url' => '/storage/uploads/trivia/banners/daily-test.jpg',
             'status' => 'published',
             'opens_at' => now()->subHour(),
             'closes_at' => now()->addHour(),

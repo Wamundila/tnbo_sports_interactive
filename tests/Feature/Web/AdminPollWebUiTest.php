@@ -5,6 +5,8 @@ namespace Tests\Feature\Web;
 use App\Models\Admin;
 use App\Models\Poll;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminPollWebUiTest extends TestCase
@@ -13,6 +15,8 @@ class AdminPollWebUiTest extends TestCase
 
     public function test_authenticated_admin_can_open_poll_pages_and_create_publish_a_poll(): void
     {
+        Storage::fake('public');
+
         $admin = Admin::create([
             'name' => 'Poll Admin',
             'email' => 'poll-admin@example.com',
@@ -45,6 +49,8 @@ class AdminPollWebUiTest extends TestCase
             'login_required' => '1',
             'verified_account_required' => '1',
             'result_visibility_mode' => 'live_percentages',
+            'cover_image_upload' => $this->fakePngUpload('poll-cover.png'),
+            'banner_image_upload' => $this->fakePngUpload('poll-banner.png'),
             'options' => [
                 [
                     'title' => 'Player A',
@@ -61,6 +67,11 @@ class AdminPollWebUiTest extends TestCase
 
         $poll = Poll::query()->where('slug', 'player-of-the-month')->firstOrFail();
 
+        $this->assertStringStartsWith('/storage/uploads/polls/covers/', $poll->cover_image_url);
+        $this->assertStringStartsWith('/storage/uploads/polls/banners/', $poll->banner_image_url);
+        Storage::disk('public')->assertExists(str_replace('/storage/', '', $poll->cover_image_url));
+        Storage::disk('public')->assertExists(str_replace('/storage/', '', $poll->banner_image_url));
+
         $this->post('/admin/polls/'.$poll->slug.'/publish')
             ->assertRedirect('/admin/polls/'.$poll->slug.'/edit');
 
@@ -71,5 +82,12 @@ class AdminPollWebUiTest extends TestCase
             ->assertSee('Player of the Month')
             ->assertSee('Publish')
             ->assertSee('Close');
+    }
+
+    private function fakePngUpload(string $name): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent($name, base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+        ));
     }
 }

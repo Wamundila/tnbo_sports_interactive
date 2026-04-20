@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -244,16 +245,10 @@ class QuizController extends Controller
             return is_string($existingPath) && trim($existingPath) !== '' ? $existingPath : null;
         }
 
-        $directory = public_path('uploads/trivia/'.$segment);
-
-        if (! is_dir($directory)) {
-            mkdir($directory, 0775, true);
-        }
-
         $extension = $file->getClientOriginalExtension() ?: $file->extension() ?: 'bin';
         $filename = now()->format('YmdHis').'-'.Str::lower(Str::random(16)).'.'.$extension;
-        $file->move($directory, $filename);
+        $path = Storage::disk('public')->putFileAs('uploads/trivia/'.$segment, $file, $filename);
 
-        return '/uploads/trivia/'.$segment.'/'.$filename;
+        return $path ? '/storage/'.$path : null;
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -308,17 +309,11 @@ class PollController extends Controller
             return is_string($existingPath) && trim($existingPath) !== '' ? $existingPath : null;
         }
 
-        $directory = public_path('uploads/polls/'.$segment);
-
-        if (! is_dir($directory)) {
-            mkdir($directory, 0775, true);
-        }
-
         $extension = $file->getClientOriginalExtension() ?: $file->extension() ?: 'bin';
         $filename = now()->format('YmdHis').'-'.Str::lower(Str::random(16)).'.'.$extension;
-        $file->move($directory, $filename);
+        $path = Storage::disk('public')->putFileAs('uploads/polls/'.$segment, $file, $filename);
 
-        return '/uploads/polls/'.$segment.'/'.$filename;
+        return $path ? '/storage/'.$path : null;
     }
 
     private function trimString(mixed $value): ?string

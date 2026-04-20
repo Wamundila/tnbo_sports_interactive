@@ -43,9 +43,10 @@ php artisan key:generate
 
 4. Configure your database and project-specific `.env` values.
 
-5. Run migrations and seed the default admin account.
+5. Run migrations, create the public storage link, and seed the default admin account.
 ```bash
 php artisan migrate --seed
+php artisan storage:link
 ```
 
 6. Start the app.
@@ -165,6 +166,12 @@ Below are the project-specific settings you are most likely to touch.
 - `CACHE_STORE`: cache driver. Also used for AuthBox profile caching.
 - `QUEUE_CONNECTION`: queue backend if async work is added later.
 
+### File Uploads
+- Admin-uploaded images and videos are stored on Laravel's `public` disk under `storage/app/public/uploads/...`.
+- Public API payloads expose app-relative URLs like `/storage/uploads/trivia/banners/...`.
+- Run `php artisan storage:link` once per environment so `/storage/...` URLs are served by the app.
+- `FILESYSTEM_DISK` can stay as `local`; the admin media upload code uses the `public` disk explicitly.
+
 ### Internal Service Security
 - `INTERACTIVE_SERVICE_KEY`: shared internal key expected in `X-TNBO-Service-Key` for protected trivia API requests.
 
@@ -253,8 +260,9 @@ For a normal local session:
 3. update `.env`
 4. `php artisan key:generate`
 5. `php artisan migrate --seed`
-6. `php artisan serve`
-7. open `/admin/login`
+6. `php artisan storage:link`
+7. `php artisan serve`
+8. open `/admin/login`
 
 ## File References
 

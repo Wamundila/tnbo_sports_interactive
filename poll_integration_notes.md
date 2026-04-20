@@ -16,6 +16,11 @@ Key integration rules:
 - trusted user ids come from JWT `sub` and must be `ts_*`
 - verified-account gating comes from AuthBox-backed profile data, not BFF booleans
 
+Media note:
+- admin-uploaded poll cover/banner/option media is stored on Laravel's `public` storage disk under `storage/app/public/uploads/polls/...`
+- API payloads expose app-relative URLs like `/storage/uploads/polls/covers/...`
+- BFF should prefix the Interactive public base URL or proxy media through its own media strategy
+
 ## Current Interactive Endpoints
 
 ### Guest-readable poll summary

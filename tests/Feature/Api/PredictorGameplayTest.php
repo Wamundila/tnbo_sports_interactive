@@ -55,7 +55,7 @@ class PredictorGameplayTest extends TestCase
         $this->withHeaders($this->authHeaders())
             ->getJson('/api/v1/predictor/campaigns/'.$campaign->slug.'/current-round')
             ->assertOk()
-            ->assertJsonPath('campaign.banner_image_url', '/uploads/predictor/campaign-banners/super-league.jpg')
+            ->assertJsonPath('campaign.banner_image_url', '/storage/uploads/predictor/campaign-banners/super-league.jpg')
             ->assertJsonPath('round.id', $round->id)
             ->assertJsonCount(4, 'fixtures');
 
@@ -63,8 +63,8 @@ class PredictorGameplayTest extends TestCase
             ->getJson('/api/v1/predictor/summary?campaign_slug='.$campaign->slug)
             ->assertOk()
             ->assertJsonPath('campaign.slug', $campaign->slug)
-            ->assertJsonPath('campaign.banner_image_url', '/uploads/predictor/campaign-banners/super-league.jpg')
-            ->assertJsonPath('predictor_surface.banner_image_url', '/uploads/predictor/campaign-banners/super-league.jpg')
+            ->assertJsonPath('campaign.banner_image_url', '/storage/uploads/predictor/campaign-banners/super-league.jpg')
+            ->assertJsonPath('predictor_surface.banner_image_url', '/storage/uploads/predictor/campaign-banners/super-league.jpg')
             ->assertJsonPath('predictor_surface.state', 'available')
             ->assertJsonPath('predictor_surface.current_round.id', $round->id)
             ->assertJsonPath('predictor_surface.auth_state', 'verified')
@@ -85,9 +85,9 @@ class PredictorGameplayTest extends TestCase
             ->getJson('/api/v1/predictor/summary?campaign_slug='.$campaign->slug)
             ->assertOk()
             ->assertJsonPath('campaign.slug', $campaign->slug)
-            ->assertJsonPath('campaign.banner_image_url', '/uploads/predictor/campaign-banners/super-league.jpg')
+            ->assertJsonPath('campaign.banner_image_url', '/storage/uploads/predictor/campaign-banners/super-league.jpg')
             ->assertJsonPath('predictor_surface.state', 'unavailable')
-            ->assertJsonPath('predictor_surface.banner_image_url', '/uploads/predictor/campaign-banners/super-league.jpg')
+            ->assertJsonPath('predictor_surface.banner_image_url', '/storage/uploads/predictor/campaign-banners/super-league.jpg')
             ->assertJsonPath('predictor_surface.auth_state', 'unknown')
             ->assertJsonPath('predictor_surface.available', false)
             ->assertJsonPath('predictor_surface.cta.disabled', true)
@@ -248,7 +248,7 @@ class PredictorGameplayTest extends TestCase
             'name' => 'Super League Predictor',
             'slug' => 'super_league_predictor',
             'display_name' => 'MTN Super League Predictor',
-            'banner_image_url' => '/uploads/predictor/campaign-banners/super-league.jpg',
+            'banner_image_url' => '/storage/uploads/predictor/campaign-banners/super-league.jpg',
             'scope_type' => 'single_competition',
             'default_fixture_count' => 4,
             'banker_enabled' => true,
