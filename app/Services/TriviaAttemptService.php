@@ -185,6 +185,7 @@ class TriviaAttemptService
             'quiz' => [
                 'id' => $attempt->quiz->id,
                 'date' => $attempt->quiz->quiz_date->toDateString(),
+                'trivia_banner_url' => $attempt->quiz->trivia_banner_url,
                 'question_count' => $attempt->quiz->question_count_expected,
                 'time_per_question_seconds' => $attempt->quiz->time_per_question_seconds,
             ],

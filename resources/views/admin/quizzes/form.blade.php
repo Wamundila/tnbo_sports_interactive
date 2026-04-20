@@ -19,6 +19,7 @@
         $quizDate = old('quiz_date', $form['quiz_date']);
         $title = old('title', $form['title']);
         $shortDescription = old('short_description', $form['short_description']);
+        $triviaBannerUrl = old('existing_trivia_banner_url', $form['trivia_banner_url']);
         $status = old('status', $form['status']);
         $opensAt = old('opens_at', $form['opens_at']);
         $closesAt = old('closes_at', $form['closes_at']);
@@ -48,7 +49,7 @@
     </section>
 
     <section class="panel">
-        <form method="POST" action="{{ $quiz ? route('admin.quizzes.update', $quiz) : route('admin.quizzes.store') }}" class="stack-lg">
+        <form method="POST" action="{{ $quiz ? route('admin.quizzes.update', $quiz) : route('admin.quizzes.store') }}" enctype="multipart/form-data" class="stack-lg">
             @csrf
             @if ($quiz)
                 @method('PUT')
@@ -74,6 +75,14 @@
                 <div class="span-2">
                     <label for="short_description">Short description</label>
                     <textarea id="short_description" name="short_description" rows="3">{{ $shortDescription }}</textarea>
+                </div>
+                <div class="span-2">
+                    <label for="trivia_banner_upload">Trivia banner image</label>
+                    <input type="hidden" name="existing_trivia_banner_url" value="{{ $triviaBannerUrl }}">
+                    <input id="trivia_banner_upload" name="trivia_banner_upload" type="file" accept="image/*">
+                    @if ($triviaBannerUrl)
+                        <div class="media-meta">Current: <a href="{{ $triviaBannerUrl }}" target="_blank">{{ $triviaBannerUrl }}</a></div>
+                    @endif
                 </div>
                 <div>
                     <label for="opens_at">Opens at</label>

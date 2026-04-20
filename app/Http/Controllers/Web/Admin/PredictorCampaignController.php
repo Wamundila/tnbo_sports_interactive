@@ -9,7 +9,9 @@ use App\Models\PredictorCampaign;
 use App\Services\AdminPredictorManagementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -51,7 +53,7 @@ class PredictorCampaignController extends Controller
     public function store(UpsertPredictorCampaignRequest $request, AdminPredictorManagementService $service): RedirectResponse
     {
         try {
-            $campaign = $service->createCampaign($request->validated(), Auth::guard('admin')->user());
+            $campaign = $service->createCampaign($this->normalizedPayload($request), Auth::guard('admin')->user());
         } catch (ApiException $exception) {
             return back()->withInput()->withErrors(['campaign' => $exception->getMessage()]);
         }
@@ -74,7 +76,7 @@ class PredictorCampaignController extends Controller
     public function update(UpsertPredictorCampaignRequest $request, PredictorCampaign $campaign, AdminPredictorManagementService $service): RedirectResponse
     {
         try {
-            $service->updateCampaign($campaign, $request->validated(), Auth::guard('admin')->user());
+            $service->updateCampaign($campaign, $this->normalizedPayload($request), Auth::guard('admin')->user());
         } catch (ApiException $exception) {
             return back()->withInput()->withErrors(['campaign' => $exception->getMessage()]);
         }
@@ -92,6 +94,7 @@ class PredictorCampaignController extends Controller
             'display_name' => $campaign?->display_name ?? 'MTN Super League Predictor',
             'sponsor_name' => $campaign?->sponsor_name ?? '',
             'description' => $campaign?->description ?? '',
+            'banner_image_url' => $campaign?->banner_image_url ?? '',
             'scope_type' => $campaign?->scope_type ?? 'single_competition',
             'default_fixture_count' => $campaign?->default_fixture_count ?? 4,
             'banker_enabled' => $campaign?->banker_enabled ?? true,
@@ -100,5 +103,41 @@ class PredictorCampaignController extends Controller
             'starts_at' => $campaign?->starts_at?->format('Y-m-d\\TH:i') ?? now()->format('Y-m-d\\TH:i'),
             'ends_at' => $campaign?->ends_at?->format('Y-m-d\\TH:i') ?? now()->addMonths(3)->format('Y-m-d\\TH:i'),
         ];
+    }
+
+    private function normalizedPayload(UpsertPredictorCampaignRequest $request): array
+    {
+        $validated = $request->validated();
+        $validated['banner_image_url'] = $this->storeMediaUpload(
+            $request->file('banner_image_upload'),
+            $validated['existing_banner_image_url'] ?? null,
+            'campaign-banners'
+        );
+
+        unset(
+            $validated['existing_banner_image_url'],
+            $validated['banner_image_upload'],
+        );
+
+        return $validated;
+    }
+
+    private function storeMediaUpload(?UploadedFile $file, ?string $existingPath, string $segment): ?string
+    {
+        if (! $file instanceof UploadedFile) {
+            return is_string($existingPath) && trim($existingPath) !== '' ? $existingPath : null;
+        }
+
+        $directory = public_path('uploads/predictor/'.$segment);
+
+        if (! is_dir($directory)) {
+            mkdir($directory, 0775, true);
+        }
+
+        $extension = $file->getClientOriginalExtension() ?: $file->extension() ?: 'bin';
+        $filename = now()->format('YmdHis').'-'.Str::lower(Str::random(16)).'.'.$extension;
+        $file->move($directory, $filename);
+
+        return '/uploads/predictor/'.$segment.'/'.$filename;
     }
 }

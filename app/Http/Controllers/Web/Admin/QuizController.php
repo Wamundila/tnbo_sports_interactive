@@ -10,7 +10,9 @@ use App\Models\TriviaQuiz;
 use App\Services\AdminTriviaQuizService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -166,6 +168,7 @@ class QuizController extends Controller
             'quiz_date' => $quiz?->quiz_date?->toDateString() ?? now()->toDateString(),
             'title' => $quiz?->title ?? "Today's TNBO Sports Trivia",
             'short_description' => $quiz?->short_description ?? 'Three questions. Verified users only.',
+            'trivia_banner_url' => $quiz?->trivia_banner_url ?? '',
             'status' => $quiz?->status ?? 'draft',
             'opens_at' => $quiz?->opens_at?->format('Y-m-d\\TH:i') ?? now()->addHour()->format('Y-m-d\\TH:i'),
             'closes_at' => $quiz?->closes_at?->format('Y-m-d\\TH:i') ?? now()->addHours(10)->format('Y-m-d\\TH:i'),
@@ -181,6 +184,11 @@ class QuizController extends Controller
     private function normalizedPayload(UpsertTriviaQuizRequest $request): array
     {
         $validated = $request->validated();
+        $triviaBannerUrl = $this->storeMediaUpload(
+            $request->file('trivia_banner_upload'),
+            $validated['existing_trivia_banner_url'] ?? null,
+            'banners'
+        );
         $questions = collect($validated['questions'] ?? [])
             ->values()
             ->map(function (array $question, int $questionIndex): array {
@@ -216,6 +224,7 @@ class QuizController extends Controller
             'quiz_date' => $validated['quiz_date'],
             'title' => $validated['title'],
             'short_description' => $validated['short_description'] ?? null,
+            'trivia_banner_url' => $triviaBannerUrl,
             'status' => $validated['status'] ?? 'draft',
             'opens_at' => $validated['opens_at'] ?? null,
             'closes_at' => $validated['closes_at'] ?? null,
@@ -227,5 +236,24 @@ class QuizController extends Controller
             'metadata' => $validated['metadata'] ?? [],
             'questions' => $questions,
         ];
+    }
+
+    private function storeMediaUpload(?UploadedFile $file, ?string $existingPath, string $segment): ?string
+    {
+        if (! $file instanceof UploadedFile) {
+            return is_string($existingPath) && trim($existingPath) !== '' ? $existingPath : null;
+        }
+
+        $directory = public_path('uploads/trivia/'.$segment);
+
+        if (! is_dir($directory)) {
+            mkdir($directory, 0775, true);
+        }
+
+        $extension = $file->getClientOriginalExtension() ?: $file->extension() ?: 'bin';
+        $filename = now()->format('YmdHis').'-'.Str::lower(Str::random(16)).'.'.$extension;
+        $file->move($directory, $filename);
+
+        return '/uploads/trivia/'.$segment.'/'.$filename;
     }
 }

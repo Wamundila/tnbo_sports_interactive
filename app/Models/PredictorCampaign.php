@@ -15,6 +15,7 @@ class PredictorCampaign extends Model
         'display_name',
         'sponsor_name',
         'description',
+        'banner_image_url',
         'scope_type',
         'default_fixture_count',
         'banker_enabled',

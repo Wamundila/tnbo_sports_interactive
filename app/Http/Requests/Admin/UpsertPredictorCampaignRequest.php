@@ -29,6 +29,8 @@ class UpsertPredictorCampaignRequest extends FormRequest
             'display_name' => ['required', 'string', 'max:255'],
             'sponsor_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'existing_banner_image_url' => ['nullable', 'string', 'max:255'],
+            'banner_image_upload' => ['nullable', 'file', 'image', 'max:5120'],
             'scope_type' => ['required', Rule::in(['single_competition', 'multi_competition', 'curated'])],
             'default_fixture_count' => ['required', 'integer', 'min:1', 'max:50'],
             'banker_enabled' => ['nullable', 'boolean'],

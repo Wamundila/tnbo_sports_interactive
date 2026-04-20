@@ -16,7 +16,7 @@
         </div>
     </section>
 
-    <form method="POST" action="{{ $campaign ? route('admin.predictor.campaigns.update', $campaign) : route('admin.predictor.campaigns.store') }}" class="stack-lg">
+    <form method="POST" action="{{ $campaign ? route('admin.predictor.campaigns.update', $campaign) : route('admin.predictor.campaigns.store') }}" enctype="multipart/form-data" class="stack-lg">
         @csrf
         @if ($campaign)
             @method('PUT')
@@ -83,6 +83,14 @@
                 <div class="span-2">
                     <label for="description">Description</label>
                     <textarea id="description" name="description">{{ old('description', $form['description']) }}</textarea>
+                </div>
+                <div class="span-2">
+                    <label for="banner_image_upload">Campaign banner image</label>
+                    <input type="hidden" name="existing_banner_image_url" value="{{ old('existing_banner_image_url', $form['banner_image_url']) }}">
+                    <input id="banner_image_upload" name="banner_image_upload" type="file" accept="image/*">
+                    @if (old('existing_banner_image_url', $form['banner_image_url']))
+                        <div class="media-meta">Current: <a href="{{ old('existing_banner_image_url', $form['banner_image_url']) }}" target="_blank">{{ old('existing_banner_image_url', $form['banner_image_url']) }}</a></div>
+                    @endif
                 </div>
             </div>
 

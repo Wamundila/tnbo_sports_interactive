@@ -125,6 +125,7 @@ class TriviaProfileController extends Controller
         return [
             'title' => $quiz?->title ?? "Today's TNBO Sports Trivia",
             'short_description' => $quiz?->short_description,
+            'trivia_banner_url' => $quiz?->trivia_banner_url,
             'state' => $todayContext['state'],
             'available' => $todayContext['available'],
             'requires_verified_account' => true,

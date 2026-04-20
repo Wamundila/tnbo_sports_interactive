@@ -116,6 +116,7 @@ Sample success response:
       "slug": "super_league_predictor",
       "display_name": "MTN Super League Predictor",
       "sponsor_name": "MTN",
+      "banner_image_url": "/uploads/predictor/campaign-banners/20260420100000-example.jpg",
       "scope_type": "single_competition",
       "status": "active",
       "current_season": {
@@ -145,11 +146,13 @@ Sample success response:
     "id": 1,
     "slug": "super_league_predictor",
     "display_name": "MTN Super League Predictor",
+    "banner_image_url": "/uploads/predictor/campaign-banners/20260420100000-example.jpg",
     "status": "active"
   },
   "predictor_surface": {
     "title": "Predict Round 8",
     "short_description": "4 fixtures - closes in 6 hours",
+    "banner_image_url": "/uploads/predictor/campaign-banners/20260420100000-example.jpg",
     "state": "available",
     "auth_state": "verified",
     "available": true,
@@ -192,6 +195,8 @@ Sample success response:
 Notes:
 - `campaign_slug` is optional; if omitted, the service resolves the first visible campaign
 - use `predictor_surface.state` as the primary UI signal
+- use `campaign.banner_image_url` or `predictor_surface.banner_image_url` for campaign hero/card imagery
+- if `banner_image_url` starts with `/uploads/`, BFF should prefix the Interactive public base URL or proxy it through its media strategy
 - `entry_summary` is only present when the user already has a round entry
 
 ### 3. Get current round for a campaign
@@ -211,7 +216,8 @@ Sample success response:
   "campaign": {
     "id": 1,
     "slug": "super_league_predictor",
-    "display_name": "MTN Super League Predictor"
+    "display_name": "MTN Super League Predictor",
+    "banner_image_url": "/uploads/predictor/campaign-banners/20260420100000-example.jpg"
   },
   "season": {
     "id": 10,
@@ -554,6 +560,7 @@ Use `predictor_surface.state = unavailable` when the campaign can be resolved bu
 Fallback expectations:
 - `auth_state` becomes `unknown`
 - `available` is `false`
+- `campaign.banner_image_url` and `predictor_surface.banner_image_url` still return the configured campaign banner when available
 - `current_round` is `null`
 - `entry_summary` is `null`
 - `user_summary` is `null`

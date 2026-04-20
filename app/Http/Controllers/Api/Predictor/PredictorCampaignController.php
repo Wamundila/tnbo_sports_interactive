@@ -34,6 +34,7 @@ class PredictorCampaignController extends Controller
                 'slug' => $campaign->slug,
                 'display_name' => $campaign->display_name,
                 'sponsor_name' => $campaign->sponsor_name,
+                'banner_image_url' => $campaign->banner_image_url,
                 'scope_type' => $campaign->scope_type,
                 'status' => $campaign->status,
                 'current_season' => $season ? [
@@ -57,6 +58,7 @@ class PredictorCampaignController extends Controller
                 'display_name' => $campaign->display_name,
                 'sponsor_name' => $campaign->sponsor_name,
                 'description' => $campaign->description,
+                'banner_image_url' => $campaign->banner_image_url,
                 'scope_type' => $campaign->scope_type,
                 'status' => $campaign->status,
             ],
@@ -79,6 +81,7 @@ class PredictorCampaignController extends Controller
                 'id' => $campaign->id,
                 'slug' => $campaign->slug,
                 'display_name' => $campaign->display_name,
+                'banner_image_url' => $campaign->banner_image_url,
             ],
             'season' => $season ? [
                 'id' => $season->id,
@@ -139,6 +142,7 @@ class PredictorCampaignController extends Controller
                     'short_description' => $round
                         ? sprintf('%d fixtures - closes %s', $round->fixtures->count(), $round->prediction_closes_at->diffForHumans())
                         : 'No active round is available right now.',
+                    'banner_image_url' => $campaign->banner_image_url,
                     'state' => $state,
                     'auth_state' => $verified ? 'verified' : 'unverified',
                     'available' => $round ? $this->resolver->isRoundOpen($round) : false,
@@ -241,6 +245,7 @@ class PredictorCampaignController extends Controller
             'id' => $campaign->id,
             'slug' => $campaign->slug,
             'display_name' => $campaign->display_name,
+            'banner_image_url' => $campaign->banner_image_url,
             'status' => $campaign->status,
         ];
     }
@@ -252,6 +257,7 @@ class PredictorCampaignController extends Controller
             'predictor_surface' => [
                 'title' => $campaign->display_name,
                 'short_description' => 'Predictor is temporarily unavailable. Please try again shortly.',
+                'banner_image_url' => $campaign->banner_image_url,
                 'state' => 'unavailable',
                 'auth_state' => 'unknown',
                 'available' => false,

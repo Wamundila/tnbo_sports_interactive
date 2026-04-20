@@ -20,6 +20,8 @@ class UpsertTriviaQuizRequest extends FormRequest
             'quiz_date' => ['required', 'date', Rule::unique('trivia_quizzes', 'quiz_date')->ignore($quizId)],
             'title' => ['required', 'string', 'max:255'],
             'short_description' => ['nullable', 'string'],
+            'existing_trivia_banner_url' => ['nullable', 'string', 'max:255'],
+            'trivia_banner_upload' => ['nullable', 'file', 'image', 'max:5120'],
             'status' => ['nullable', Rule::in(['draft', 'scheduled', 'archived'])],
             'opens_at' => ['nullable', 'date'],
             'closes_at' => ['nullable', 'date', 'after:opens_at'],

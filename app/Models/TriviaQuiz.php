@@ -11,6 +11,7 @@ class TriviaQuiz extends Model
         'quiz_date',
         'title',
         'short_description',
+        'trivia_banner_url',
         'status',
         'opens_at',
         'closes_at',

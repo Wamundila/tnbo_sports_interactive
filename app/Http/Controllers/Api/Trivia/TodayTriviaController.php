@@ -42,6 +42,7 @@ class TodayTriviaController extends Controller
                 'id' => $quiz->id,
                 'title' => $quiz->title,
                 'description' => $quiz->short_description,
+                'trivia_banner_url' => $quiz->trivia_banner_url,
                 'opens_at' => $quiz->opens_at?->toIso8601String(),
                 'closes_at' => $quiz->closes_at?->toIso8601String(),
                 'question_count' => $quiz->question_count_expected,

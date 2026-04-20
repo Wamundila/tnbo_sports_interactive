@@ -127,6 +127,8 @@ The following fields were added to support current TNBO Sports Flutter/BFF trivi
 
 - `POST /api/v1/trivia/attempts/{attempt}/submit` also includes `result.rank` as a convenience mirror of `leaderboard_impact`.
 
+- Admin-managed trivia banner uploads now surface as `trivia_banner_url` on `/today`, `/summary.daily_trivia`, and `/today/start.quiz`.
+
 - `GET /api/v1/trivia/me/history` rows now include:
 
 ```json
@@ -185,6 +187,7 @@ Sample success response when quiz is open and playable:
     "id": 1,
     "title": "Today's TNBO Sports Trivia",
     "description": "3 questions - 90 seconds total potential - 9 base points",
+    "trivia_banner_url": "/uploads/trivia/banners/20260420100000-example.jpg",
     "opens_at": "2026-03-25T09:00:00+02:00",
     "closes_at": "2026-03-25T21:00:00+02:00",
     "question_count": 3,
@@ -211,6 +214,7 @@ Sample success response when there is an active attempt:
     "id": 1,
     "title": "Today's TNBO Sports Trivia",
     "description": "3 questions - 90 seconds total potential - 9 base points",
+    "trivia_banner_url": "/uploads/trivia/banners/20260420100000-example.jpg",
     "opens_at": "2026-03-25T09:00:00+02:00",
     "closes_at": "2026-03-25T21:00:00+02:00",
     "question_count": 3,
@@ -258,6 +262,7 @@ Sample success response after a completed play:
   "daily_trivia": {
     "title": "Today's TNBO Sports Trivia",
     "short_description": "3 questions - 90 seconds total potential - 9 base points",
+    "trivia_banner_url": "/uploads/trivia/banners/20260420100000-example.jpg",
     "state": "already_played",
     "available": true,
     "requires_verified_account": true,
@@ -379,6 +384,7 @@ Sample success response:
   "quiz": {
     "id": 1,
     "date": "2026-03-25",
+    "trivia_banner_url": "/uploads/trivia/banners/20260420100000-example.jpg",
     "question_count": 3,
     "time_per_question_seconds": 30
   },
@@ -662,6 +668,7 @@ Notes:
 - Treat `code` as the primary integration signal, not only the message text.
 - Use `state` from `/today` as the primary Home/Games surface state.
 - Use `/summary` for one-call authenticated trivia surface composition.
+- Treat `trivia_banner_url` as an app-renderable image path; if it starts with `/uploads/`, BFF should prefix the Interactive public base URL or proxy it through its media strategy.
 - Use `current_attempt` from `/today` or `/summary` for resume/countdown UI when present.
 - Cache or store `attempt_id` client-side between `start` and `submit`.
 - Use `expires_at` from the `start` response as the source of truth for client countdowns.

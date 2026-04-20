@@ -76,6 +76,8 @@ class AdminWebUiTest extends TestCase
         $this->get('/admin/quizzes/create')
             ->assertOk()
             ->assertSee('Create Quiz')
+            ->assertSee('Trivia banner image')
+            ->assertSee('multipart/form-data')
             ->assertSee('state: not_open');
 
         $this->get('/admin/reports')
@@ -92,6 +94,11 @@ class AdminWebUiTest extends TestCase
             ->assertOk()
             ->assertSee('Predictor Campaigns')
             ->assertSee('/api/v1/predictor/summary');
+
+        $this->get('/admin/predictor/campaigns/create')
+            ->assertOk()
+            ->assertSee('Campaign banner image')
+            ->assertSee('multipart/form-data');
     }
 
     public function test_admin_can_create_predictor_campaign_season_and_round_that_surfaces_as_available(): void
